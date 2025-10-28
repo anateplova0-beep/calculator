@@ -1,1 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Калькулятор стоимости услуги</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #ffbadc;
+      }
+      .calculator {
+        background: rgb(255, 255, 255);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #333;
+      }
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #ffc6d7;
+        border-radius: 5px;
+        font-size: 16px;
+        box-sizing: border-box;
+      }
+      .radio-group {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .hidden {
+        display: none;
+      }
+      .result {
+        background: #e7adda;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
+        text-align: center;
+      }
+      .price {
+        font-size: 24px;
+        font-weight: bold;
+        color: #910c62;
+      }
+      .total-price {
+        font-size: 28px;
+        color: #910c62;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <h1>Калькулятор стоимости услуги</h1>
 
+      <div class="form-group">
+        <label for="quantity">Количество:</label>
+        <input type="number" id="quantity" min="1" value="1" />
+      </div>
+
+      <div class="form-group">
+        <label>Тип услуги:</label>
+        <div class="radio-group">
+          <div class="radio-option">
+            <input
+              type="radio"
+              id="type1"
+              name="serviceType"
+              value="basic"
+              checked
+            />
+            <label for="type1">Базовая услуга</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="type2" name="serviceType" value="premium" />
+            <label for="type2">Премиум услуга</label>
+          </div>
+          <div class="radio-option">
+            <input type="radio" id="type3" name="serviceType" value="custom" />
+            <label for="type3">Кастомная услуга</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="optionsGroup" class="form-group hidden">
+        <label for="options">Опции услуги:</label>
+        <select id="options">
+          <option value="standard">Стандартная опция</option>
+          <option value="advanced">Продвинутая опция</option>
+          <option value="professional">Профессиональная опция</option>
+        </select>
+      </div>
+
+      <div id="propertyGroup" class="form-group hidden">
+        <div class="checkbox-group">
+          <input type="checkbox" id="property" />
+          <label for="property"
+            >Дополнительное свойство (премиум-функция)</label
+          >
+        </div>
+      </div>
+
+      <div class="result">
+        <div>
+          Стоимость за единицу: <span class="price" id="unitPrice">0</span> руб.
+        </div>
+        <div>
+          Общая стоимость:
+          <span class="total-price" id="totalPrice">0</span> руб.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Базовая стоимость для каждого типа услуги
+      const basePrices = {
+        basic: 1000,
+        premium: 2000,
+        custom: 1500,
+      };
+
+      // Модификаторы стоимости для опций
+      const optionModifiers = {
+        standard: 1.0,
+        advanced: 1.5,
+        professional: 2.0,
+      };
+
+      // Модификатор стоимости для свойства
+      const propertyModifier = 1.3;
+
+      // Элементы DOM
+      const quantityInput = document.getElementById("quantity");
+      const serviceTypeRadios = document.querySelectorAll(
+        'input[name="serviceType"]'
+      );
+      const optionsGroup = document.getElementById("optionsGroup");
+      const optionsSelect = document.getElementById("options");
+      const propertyGroup = document.getElementById("propertyGroup");
+      const propertyCheckbox = document.getElementById("property");
+      const unitPriceElement = document.getElementById("unitPrice");
+      const totalPriceElement = document.getElementById("totalPrice");
+
+      // Функция для обновления видимости элементов
+      function updateFormVisibility() {
+        const selectedType = document.querySelector(
+          'input[name="serviceType"]:checked'
+        ).value;
+
+        // Сброс значений при смене типа
+        optionsSelect.value = "standard";
+        propertyCheckbox.checked = false;
+
+        // Управление видимостью элементов в зависимости от типа услуги
+        switch (selectedType) {
+          case "basic":
+            // Базовый тип - скрываем всё
+            optionsGroup.classList.add("hidden");
+            propertyGroup.classList.add("hidden");
+            break;
+          case "premium":
+            // Премиум тип - показываем только опции
+            optionsGroup.classList.remove("hidden");
+            propertyGroup.classList.add("hidden");
+            break;
+          case "custom":
+            // Кастомный тип - показываем только свойство
+            optionsGroup.classList.add("hidden");
+            propertyGroup.classList.remove("hidden");
+            break;
+        }
+      }
+
+      // Функция для расчета стоимости
+      function calculatePrice() {
+        const quantity = parseInt(quantityInput.value) || 1;
+        const selectedType = document.querySelector(
+          'input[name="serviceType"]:checked'
+        ).value;
+
+        let unitPrice = basePrices[selectedType];
+
+        // Применяем модификаторы в зависимости от типа услуги
+        if (selectedType === "premium") {
+          const selectedOption = optionsSelect.value;
+          unitPrice *= optionModifiers[selectedOption];
+        } else if (selectedType === "custom" && propertyCheckbox.checked) {
+          unitPrice *= propertyModifier;
+        }
+
+        const totalPrice = unitPrice * quantity;
+
+        // Обновляем отображение цен
+        unitPriceElement.textContent = Math.round(unitPrice);
+        totalPriceElement.textContent = Math.round(totalPrice);
+      }
+
+      // Инициализация калькулятора
+      function initCalculator() {
+        updateFormVisibility();
+        calculatePrice();
+
+        // Добавляем обработчики событий
+        serviceTypeRadios.forEach((radio) => {
+          radio.addEventListener("change", function () {
+            updateFormVisibility();
+            calculatePrice();
+          });
+        });
+
+        quantityInput.addEventListener("input", calculatePrice);
+        optionsSelect.addEventListener("change", calculatePrice);
+        propertyCheckbox.addEventListener("change", calculatePrice);
+      }
+
+      // Запускаем калькулятор при загрузке страницы
+      document.addEventListener("DOMContentLoaded", initCalculator);
+    </script>
+  </body>
+</html>
