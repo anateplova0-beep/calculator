@@ -71,6 +71,16 @@
         color: #910c62;
         margin-top: 10px;
       }
+      .error-message {
+        color: #d32f2f;
+        font-size: 14px;
+        margin-top: 5px;
+        display: none;
+      }
+      input.invalid {
+        border-color: #d32f2f;
+        background-color: #ffebee;
+      }
     </style>
   </head>
   <body>
@@ -80,6 +90,9 @@
       <div class="form-group">
         <label for="quantity">Количество:</label>
         <input type="number" id="quantity" min="1" value="1" />
+        <div class="error-message" id="quantityError">
+          Пожалуйста, введите число не меньше 1
+        </div>
       </div>
 
       <div class="form-group">
@@ -155,6 +168,7 @@
 
       // Элементы DOM
       const quantityInput = document.getElementById("quantity");
+      const quantityError = document.getElementById("quantityError");
       const serviceTypeRadios = document.querySelectorAll(
         'input[name="serviceType"]'
       );
@@ -164,6 +178,55 @@
       const propertyCheckbox = document.getElementById("property");
       const unitPriceElement = document.getElementById("unitPrice");
       const totalPriceElement = document.getElementById("totalPrice");
+
+      // Функция для валидации ввода количества
+      function validateQuantity() {
+        const value = quantityInput.value;
+        const numberValue = parseInt(value);
+
+        // Проверяем, является ли значение числом и не меньше 1
+        if (isNaN(numberValue) || numberValue < 1) {
+          quantityInput.classList.add("invalid");
+          quantityError.style.display = "block";
+          return false;
+        } else {
+          quantityInput.classList.remove("invalid");
+          quantityError.style.display = "none";
+          return true;
+        }
+      }
+
+      // Функция для обработки ввода в поле количества
+      function handleQuantityInput(event) {
+        // Удаляем все нецифровые символы, кроме минуса (но он нам не нужен)
+        let value = event.target.value.replace(/[^\d]/g, "");
+
+        // Если значение пустое, устанавливаем 1
+        if (value === "") {
+          value = "1";
+        }
+
+        // Преобразуем в число и проверяем минимальное значение
+        const numberValue = parseInt(value);
+        if (numberValue < 1) {
+          value = "1";
+        }
+
+        event.target.value = value;
+        validateQuantity();
+        calculatePrice();
+      }
+
+      // Функция для обработки вставки текста
+      function handleQuantityPaste(event) {
+        // Получаем вставленные данные
+        const pasteData = event.clipboardData.getData("text");
+
+        // Проверяем, содержат ли вставленные данные только цифры
+        if (!/^\d+$/.test(pasteData)) {
+          event.preventDefault();
+        }
+      }
 
       // Функция для обновления видимости элементов
       function updateFormVisibility() {
@@ -197,6 +260,11 @@
 
       // Функция для расчета стоимости
       function calculatePrice() {
+        // Проверяем валидность ввода перед расчетом
+        if (!validateQuantity()) {
+          return;
+        }
+
         const quantity = parseInt(quantityInput.value) || 1;
         const selectedType = document.querySelector(
           'input[name="serviceType"]:checked'
@@ -222,6 +290,7 @@
       // Инициализация калькулятора
       function initCalculator() {
         updateFormVisibility();
+        validateQuantity();
         calculatePrice();
 
         // Добавляем обработчики событий
@@ -232,7 +301,15 @@
           });
         });
 
-        quantityInput.addEventListener("input", calculatePrice);
+        quantityInput.addEventListener("input", handleQuantityInput);
+        quantityInput.addEventListener("paste", handleQuantityPaste);
+        quantityInput.addEventListener("blur", function () {
+          if (!validateQuantity()) {
+            quantityInput.value = "1";
+            calculatePrice();
+          }
+        });
+
         optionsSelect.addEventListener("change", calculatePrice);
         propertyCheckbox.addEventListener("change", calculatePrice);
       }
